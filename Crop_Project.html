@@ -16,11 +16,19 @@
   
   <div class="container">
     <div class="header">
-      <h1>🌱 Smart Crop Recommendation</h1>
-      <p>Get AI-powered crop recommendations based on your soil and weather conditions</p>
-      <div id="serverStatus" class="server-status">
-        <span id="statusIcon">🔄</span>
-        <span id="statusText">Checking server status...</span>
+      <div class="logo-container">
+        <img style="border-radius: 50%;" src="logo.jpg" alt="Smart Crop Recommendation Logo" class="logo">
+        <div class="logo-text">
+          <h1>🌱 Smart Crop Recommendation</h1>
+          <p>AI-powered farming solutions for sustainable agriculture</p>
+        </div>
+      </div>
+      <div class="header-content">
+        <p>Get AI-powered crop recommendations based on your soil and weather conditions</p>
+        <div id="serverStatus" class="server-status">
+          <span id="statusIcon">🔄</span>
+          <span id="statusText">Checking server status...</span>
+        </div>
       </div>
     </div>
 
@@ -74,6 +82,69 @@
 
     <div class="result" id="result"></div>
   </div>
+
+  <!-- AI Farming Assistant Chatbot -->
+  <div class="chatbot-container" id="chatbotContainer">
+    <div class="chatbot-header">
+      <div class="chatbot-title">
+        <i class="fas fa-robot"></i>
+        <span>AI Farming Assistant</span>
+      </div>
+      <button class="chatbot-close" id="chatbotClose">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    
+    <div class="chatbot-messages" id="chatbotMessages">
+      <div class="message bot-message">
+        <div class="message-avatar">
+          <i class="fas fa-seedling"></i>
+        </div>
+        <div class="message-content">
+          <p>Hello! I'm your AI Farming Assistant. I can help you with:</p>
+          <ul>
+            <li>🌾 Crop recommendations</li>
+            <li>🌱 Farming advice & tips</li>
+            <li>💧 Irrigation guidance</li>
+            <li>🧪 Soil management</li>
+            <li>🌿 Fertilizer recommendations</li>
+          </ul>
+          <p>What would you like to know?</p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="chatbot-input-container">
+      <div class="chatbot-input-wrapper">
+        <input 
+          type="text" 
+          id="chatbotInput" 
+          placeholder="Ask me about farming, crops, or agriculture..."
+          maxlength="500"
+        >
+        <button id="chatbotSend" class="chatbot-send-btn">
+          <i class="fas fa-paper-plane"></i>
+        </button>
+      </div>
+      <div class="chatbot-suggestions">
+        <button class="suggestion-btn" data-message="What crops grow best in sandy soil?">
+          Sandy soil crops
+        </button>
+        <button class="suggestion-btn" data-message="How to improve soil fertility?">
+          Soil fertility
+        </button>
+        <button class="suggestion-btn" data-message="Best irrigation methods for vegetables?">
+          Irrigation tips
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating Chatbot Button -->
+  <button class="chatbot-toggle" id="chatbotToggle">
+    <i class="fas fa-comments"></i>
+    <span class="chatbot-notification" id="chatbotNotification">1</span>
+  </button>
 
   <script src="script.js"></script>
 </body>

@@ -266,3 +266,334 @@ document.addEventListener('keypress', function(e) {
     getCrop();
   }
 });
+
+// AI Farming Assistant Chatbot Functionality
+
+// Chatbot state management
+let chatbotState = {
+  isOpen: false,
+  isTyping: false,
+  messageHistory: []
+};
+
+// Initialize chatbot when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+  initializeChatbot();
+});
+
+function initializeChatbot() {
+  const chatbotToggle = document.getElementById('chatbotToggle');
+  const chatbotContainer = document.getElementById('chatbotContainer');
+  const chatbotClose = document.getElementById('chatbotClose');
+  const chatbotInput = document.getElementById('chatbotInput');
+  const chatbotSend = document.getElementById('chatbotSend');
+  const suggestionBtns = document.querySelectorAll('.suggestion-btn');
+  
+  // Toggle chatbot visibility
+  chatbotToggle.addEventListener('click', function() {
+    toggleChatbot();
+  });
+  
+  // Close chatbot
+  chatbotClose.addEventListener('click', function() {
+    closeChatbot();
+  });
+  
+  // Send message on button click
+  chatbotSend.addEventListener('click', function() {
+    sendMessage();
+  });
+  
+  // Send message on Enter key
+  chatbotInput.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+  
+  // Handle suggestion button clicks
+  suggestionBtns.forEach(btn => {
+    btn.addEventListener('click', function() {
+      const message = this.getAttribute('data-message');
+      chatbotInput.value = message;
+      sendMessage();
+    });
+  });
+  
+  // Auto-resize input
+  chatbotInput.addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+  });
+  
+  // Hide notification after first interaction
+  chatbotToggle.addEventListener('click', function() {
+    const notification = document.getElementById('chatbotNotification');
+    if (notification) {
+      notification.style.display = 'none';
+    }
+  });
+}
+
+function toggleChatbot() {
+  const chatbotContainer = document.getElementById('chatbotContainer');
+  const chatbotToggle = document.getElementById('chatbotToggle');
+  
+  if (chatbotState.isOpen) {
+    closeChatbot();
+  } else {
+    openChatbot();
+  }
+}
+
+function openChatbot() {
+  const chatbotContainer = document.getElementById('chatbotContainer');
+  const chatbotToggle = document.getElementById('chatbotToggle');
+  const chatbotInput = document.getElementById('chatbotInput');
+  
+  chatbotContainer.classList.add('show');
+  chatbotToggle.style.transform = 'scale(0.9)';
+  chatbotState.isOpen = true;
+  
+  // Focus on input after animation
+  setTimeout(() => {
+    chatbotInput.focus();
+  }, 300);
+  
+  // Add entrance animation
+  chatbotContainer.style.animation = 'chatbotSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1)';
+}
+
+function closeChatbot() {
+  const chatbotContainer = document.getElementById('chatbotContainer');
+  const chatbotToggle = document.getElementById('chatbotToggle');
+  
+  chatbotContainer.classList.remove('show');
+  chatbotToggle.style.transform = 'scale(1)';
+  chatbotState.isOpen = false;
+}
+
+async function sendMessage() {
+  const chatbotInput = document.getElementById('chatbotInput');
+  const message = chatbotInput.value.trim();
+  
+  if (!message || chatbotState.isTyping) {
+    return;
+  }
+  
+  // Clear input and add to history
+  chatbotInput.value = '';
+  chatbotInput.style.height = 'auto';
+  chatbotState.messageHistory.push({ type: 'user', content: message });
+  
+  // Display user message
+  displayMessage(message, 'user');
+  
+  // Show typing indicator
+  showTypingIndicator();
+  
+  try {
+    // Send message to backend
+    const response = await fetch('http://127.0.0.1:5000/chatbot', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ message: message })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    // Hide typing indicator
+    hideTypingIndicator();
+    
+    // Display bot response
+    if (data.response) {
+      chatbotState.messageHistory.push({ type: 'bot', content: data.response });
+      displayMessage(data.response, 'bot');
+    } else {
+      displayMessage('Sorry, I couldn\'t process your request. Please try again.', 'bot');
+    }
+    
+  } catch (error) {
+    console.error('Chatbot error:', error);
+    hideTypingIndicator();
+    
+    // Display error message
+    const errorMessage = `Sorry, I'm having trouble connecting to the server. Please make sure the Flask server is running by executing "python launch_app.py" or "python simple_app.py".`;
+    displayMessage(errorMessage, 'bot');
+  }
+}
+
+function displayMessage(content, type) {
+  const messagesContainer = document.getElementById('chatbotMessages');
+  const messageDiv = document.createElement('div');
+  messageDiv.className = `message ${type}-message`;
+  
+  const avatar = document.createElement('div');
+  avatar.className = 'message-avatar';
+  avatar.innerHTML = type === 'bot' ? '<i class="fas fa-seedling"></i>' : '<i class="fas fa-user"></i>';
+  
+  const messageContent = document.createElement('div');
+  messageContent.className = 'message-content';
+  
+  // Format message content (support for markdown-like formatting)
+  const formattedContent = formatMessageContent(content);
+  messageContent.innerHTML = formattedContent;
+  
+  messageDiv.appendChild(avatar);
+  messageDiv.appendChild(messageContent);
+  
+  // Add message with animation
+  messagesContainer.appendChild(messageDiv);
+  
+  // Scroll to bottom with smooth animation
+  setTimeout(() => {
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  }, 100);
+  
+  // Add entrance animation
+  messageDiv.style.opacity = '0';
+  messageDiv.style.transform = 'translateY(20px)';
+  
+  setTimeout(() => {
+    messageDiv.style.transition = 'all 0.3s ease-out';
+    messageDiv.style.opacity = '1';
+    messageDiv.style.transform = 'translateY(0)';
+  }, 50);
+}
+
+function formatMessageContent(content) {
+  // Convert markdown-like formatting to HTML
+  let formatted = content
+    // Bold text
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    // Bullet points
+    .replace(/^• (.*$)/gim, '<li>$1</li>')
+    // Line breaks
+    .replace(/\n/g, '<br>');
+  
+  // Wrap consecutive <li> elements in <ul>
+  formatted = formatted.replace(/(<li>.*<\/li>)/gs, function(match) {
+    return '<ul>' + match + '</ul>';
+  });
+  
+  // Clean up multiple <br> tags
+  formatted = formatted.replace(/(<br>\s*){3,}/g, '<br><br>');
+  
+  return formatted;
+}
+
+function showTypingIndicator() {
+  const messagesContainer = document.getElementById('chatbotMessages');
+  chatbotState.isTyping = true;
+  
+  const typingDiv = document.createElement('div');
+  typingDiv.className = 'message bot-message typing-message';
+  typingDiv.id = 'typingIndicator';
+  
+  const avatar = document.createElement('div');
+  avatar.className = 'message-avatar';
+  avatar.innerHTML = '<i class="fas fa-seedling"></i>';
+  
+  const typingContent = document.createElement('div');
+  typingContent.className = 'message-content';
+  
+  const typingIndicator = document.createElement('div');
+  typingIndicator.className = 'typing-indicator';
+  typingIndicator.innerHTML = `
+    <div class="typing-dot"></div>
+    <div class="typing-dot"></div>
+    <div class="typing-dot"></div>
+  `;
+  
+  typingContent.appendChild(typingIndicator);
+  typingDiv.appendChild(avatar);
+  typingDiv.appendChild(typingContent);
+  
+  messagesContainer.appendChild(typingDiv);
+  messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+function hideTypingIndicator() {
+  const typingIndicator = document.getElementById('typingIndicator');
+  if (typingIndicator) {
+    typingIndicator.remove();
+  }
+  chatbotState.isTyping = false;
+}
+
+// Enhanced particle effect for chatbot interactions
+function createChatbotParticles(element) {
+  const rect = element.getBoundingClientRect();
+  const centerX = rect.left + rect.width / 2;
+  const centerY = rect.top + rect.height / 2;
+  
+  for (let i = 0; i < 8; i++) {
+    const particle = document.createElement('div');
+    particle.style.position = 'fixed';
+    particle.style.left = centerX + 'px';
+    particle.style.top = centerY + 'px';
+    particle.style.width = '6px';
+    particle.style.height = '6px';
+    particle.style.background = '#27ae60';
+    particle.style.borderRadius = '50%';
+    particle.style.pointerEvents = 'none';
+    particle.style.zIndex = '9999';
+    
+    const angle = (i / 8) * Math.PI * 2;
+    const distance = 50 + Math.random() * 30;
+    const randomX = Math.cos(angle) * distance;
+    const randomY = Math.sin(angle) * distance;
+    
+    particle.style.setProperty('--random-x', randomX + 'px');
+    particle.style.setProperty('--random-y', randomY + 'px');
+    particle.style.animation = 'particleFloat 0.8s ease-out forwards';
+    
+    document.body.appendChild(particle);
+    
+    setTimeout(() => {
+      particle.remove();
+    }, 800);
+  }
+}
+
+// Add chatbot button click effect
+document.addEventListener('DOMContentLoaded', function() {
+  const chatbotToggle = document.getElementById('chatbotToggle');
+  const chatbotSend = document.getElementById('chatbotSend');
+  
+  if (chatbotToggle) {
+    chatbotToggle.addEventListener('click', function() {
+      createChatbotParticles(this);
+    });
+  }
+  
+  if (chatbotSend) {
+    chatbotSend.addEventListener('click', function() {
+      createChatbotParticles(this);
+    });
+  }
+});
+
+// Close chatbot when clicking outside
+document.addEventListener('click', function(event) {
+  const chatbotContainer = document.getElementById('chatbotContainer');
+  const chatbotToggle = document.getElementById('chatbotToggle');
+  
+  if (chatbotState.isOpen && 
+      !chatbotContainer.contains(event.target) && 
+      !chatbotToggle.contains(event.target)) {
+    closeChatbot();
+  }
+});
+
+// Prevent chatbot from closing when clicking inside
+document.getElementById('chatbotContainer')?.addEventListener('click', function(event) {
+  event.stopPropagation();
+});
