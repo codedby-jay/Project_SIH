@@ -597,3 +597,336 @@ document.addEventListener('click', function(event) {
 document.getElementById('chatbotContainer')?.addEventListener('click', function(event) {
   event.stopPropagation();
 });
+
+// Gujarat District-wise Crop Recommendation System
+
+// Gujarat Districts Data with Weather, Soil & Environmental Factors
+const GUJARAT_DISTRICTS = {
+  'Ahmedabad': {
+    climate: { temp: 28, humidity: 65, rainfall: 800 },
+    soil: { type: 'alluvial', ph: 7.2, fertility: 'medium' },
+    environment: { water_availability: 'moderate', irrigation: 'canal' },
+    recommended_crops: ['cotton', 'wheat', 'bajra', 'groundnut']
+  },
+  'Surat': {
+    climate: { temp: 30, humidity: 75, rainfall: 1200 },
+    soil: { type: 'alluvial', ph: 6.8, fertility: 'high' },
+    environment: { water_availability: 'good', irrigation: 'river' },
+    recommended_crops: ['sugarcane', 'cotton', 'rice', 'banana']
+  },
+  'Vadodara': {
+    climate: { temp: 29, humidity: 70, rainfall: 900 },
+    soil: { type: 'black_cotton', ph: 7.5, fertility: 'high' },
+    environment: { water_availability: 'good', irrigation: 'canal' },
+    recommended_crops: ['cotton', 'wheat', 'maize', 'sugarcane']
+  },
+  'Rajkot': {
+    climate: { temp: 27, humidity: 60, rainfall: 600 },
+    soil: { type: 'black_cotton', ph: 7.8, fertility: 'medium' },
+    environment: { water_availability: 'limited', irrigation: 'groundwater' },
+    recommended_crops: ['cotton', 'groundnut', 'castor', 'wheat']
+  },
+  'Bhavnagar': {
+    climate: { temp: 28, humidity: 65, rainfall: 550 },
+    soil: { type: 'coastal_alluvial', ph: 7.0, fertility: 'medium' },
+    environment: { water_availability: 'limited', irrigation: 'groundwater' },
+    recommended_crops: ['cotton', 'groundnut', 'bajra', 'sesame']
+  },
+  'Jamnagar': {
+    climate: { temp: 29, humidity: 70, rainfall: 400 },
+    soil: { type: 'sandy_loam', ph: 7.3, fertility: 'low' },
+    environment: { water_availability: 'scarce', irrigation: 'drip' },
+    recommended_crops: ['groundnut', 'castor', 'bajra', 'cotton']
+  },
+  'Junagadh': {
+    climate: { temp: 26, humidity: 68, rainfall: 900 },
+    soil: { type: 'black_cotton', ph: 7.4, fertility: 'high' },
+    environment: { water_availability: 'good', irrigation: 'canal' },
+    recommended_crops: ['cotton', 'groundnut', 'wheat', 'mango']
+  },
+  'Gandhinagar': {
+    climate: { temp: 28, humidity: 62, rainfall: 750 },
+    soil: { type: 'alluvial', ph: 7.1, fertility: 'medium' },
+    environment: { water_availability: 'moderate', irrigation: 'canal' },
+    recommended_crops: ['wheat', 'bajra', 'cotton', 'vegetables']
+  },
+  'Anand': {
+    climate: { temp: 27, humidity: 68, rainfall: 850 },
+    soil: { type: 'alluvial', ph: 6.9, fertility: 'high' },
+    environment: { water_availability: 'good', irrigation: 'canal' },
+    recommended_crops: ['tobacco', 'cotton', 'wheat', 'sugarcane']
+  },
+  'Kutch': {
+    climate: { temp: 30, humidity: 55, rainfall: 350 },
+    soil: { type: 'sandy', ph: 8.0, fertility: 'low' },
+    environment: { water_availability: 'very_limited', irrigation: 'drip' },
+    recommended_crops: ['castor', 'bajra', 'mustard', 'cumin']
+  },
+  'Banaskantha': {
+    climate: { temp: 26, humidity: 58, rainfall: 650 },
+    soil: { type: 'sandy_loam', ph: 7.6, fertility: 'medium' },
+    environment: { water_availability: 'moderate', irrigation: 'tube_well' },
+    recommended_crops: ['bajra', 'wheat', 'mustard', 'castor']
+  },
+  'Sabarkantha': {
+    climate: { temp: 25, humidity: 62, rainfall: 800 },
+    soil: { type: 'red_sandy', ph: 6.5, fertility: 'medium' },
+    environment: { water_availability: 'moderate', irrigation: 'tube_well' },
+    recommended_crops: ['maize', 'wheat', 'bajra', 'vegetables']
+  },
+  'Mehsana': {
+    climate: { temp: 27, humidity: 60, rainfall: 700 },
+    soil: { type: 'alluvial', ph: 7.3, fertility: 'medium' },
+    environment: { water_availability: 'moderate', irrigation: 'tube_well' },
+    recommended_crops: ['bajra', 'wheat', 'mustard', 'cumin']
+  },
+  'Patan': {
+    climate: { temp: 28, humidity: 58, rainfall: 650 },
+    soil: { type: 'sandy_loam', ph: 7.5, fertility: 'medium' },
+    environment: { water_availability: 'limited', irrigation: 'tube_well' },
+    recommended_crops: ['bajra', 'castor', 'mustard', 'wheat']
+  },
+  'Kheda': {
+    climate: { temp: 28, humidity: 65, rainfall: 800 },
+    soil: { type: 'black_cotton', ph: 7.2, fertility: 'high' },
+    environment: { water_availability: 'good', irrigation: 'canal' },
+    recommended_crops: ['tobacco', 'cotton', 'wheat', 'rice']
+  },
+  'Panchmahals': {
+    climate: { temp: 26, humidity: 70, rainfall: 950 },
+    soil: { type: 'red_loam', ph: 6.8, fertility: 'medium' },
+    environment: { water_availability: 'good', irrigation: 'canal' },
+    recommended_crops: ['maize', 'wheat', 'cotton', 'vegetables']
+  },
+  'Dahod': {
+    climate: { temp: 25, humidity: 72, rainfall: 1000 },
+    soil: { type: 'red_loam', ph: 6.6, fertility: 'medium' },
+    environment: { water_availability: 'good', irrigation: 'canal' },
+    recommended_crops: ['maize', 'wheat', 'cotton', 'soybean']
+  },
+  'Valsad': {
+    climate: { temp: 31, humidity: 80, rainfall: 1800 },
+    soil: { type: 'coastal_alluvial', ph: 6.5, fertility: 'high' },
+    environment: { water_availability: 'abundant', irrigation: 'river' },
+    recommended_crops: ['rice', 'sugarcane', 'coconut', 'mango']
+  },
+  'Navsari': {
+    climate: { temp: 30, humidity: 78, rainfall: 1500 },
+    soil: { type: 'alluvial', ph: 6.7, fertility: 'high' },
+    environment: { water_availability: 'good', irrigation: 'river' },
+    recommended_crops: ['sugarcane', 'rice', 'banana', 'vegetables']
+  },
+  'Bharuch': {
+    climate: { temp: 29, humidity: 72, rainfall: 1100 },
+    soil: { type: 'alluvial', ph: 7.0, fertility: 'high' },
+    environment: { water_availability: 'good', irrigation: 'river' },
+    recommended_crops: ['cotton', 'sugarcane', 'rice', 'banana']
+  },
+  'Narmada': {
+    climate: { temp: 28, humidity: 75, rainfall: 1200 },
+    soil: { type: 'alluvial', ph: 6.9, fertility: 'high' },
+    environment: { water_availability: 'abundant', irrigation: 'river' },
+    recommended_crops: ['rice', 'sugarcane', 'cotton', 'wheat']
+  },
+  'Tapi': {
+    climate: { temp: 29, humidity: 76, rainfall: 1300 },
+    soil: { type: 'alluvial', ph: 6.8, fertility: 'high' },
+    environment: { water_availability: 'good', irrigation: 'river' },
+    recommended_crops: ['rice', 'sugarcane', 'cotton', 'vegetables']
+  },
+  'Dang': {
+    climate: { temp: 24, humidity: 85, rainfall: 2200 },
+    soil: { type: 'red_loam', ph: 6.2, fertility: 'medium' },
+    environment: { water_availability: 'abundant', irrigation: 'natural' },
+    recommended_crops: ['rice', 'maize', 'vegetables', 'fruits']
+  }
+};
+
+// Gujarat District-wise Crop Recommendation Function
+async function getGujaratRecommendations() {
+  const gujaratBtn = document.getElementById('gujaratBtn');
+  const loading = document.getElementById('loading');
+  const result = document.getElementById('result');
+  
+  // Add particle effect
+  const rect = gujaratBtn.getBoundingClientRect();
+  createParticles(rect.left + rect.width / 2, rect.top + rect.height / 2);
+  
+  // Show loading state
+  gujaratBtn.disabled = true;
+  gujaratBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span class="btn-text">Analyzing Gujarat Districts...</span>';
+  loading.style.display = 'block';
+  result.classList.remove('show', 'success', 'error');
+  
+  try {
+    // Simulate API call delay for realistic experience
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Generate comprehensive Gujarat analysis
+    const analysis = generateGujaratAnalysis();
+    
+    // Display results
+    displayGujaratResults(analysis);
+    
+    // Add success particle effect
+    setTimeout(() => {
+      createParticles(window.innerWidth / 2, window.innerHeight / 2);
+    }, 500);
+    
+  } catch (error) {
+    console.error('Gujarat analysis error:', error);
+    displayError('Failed to analyze Gujarat districts. Please try again.');
+  } finally {
+    // Restore button
+    gujaratBtn.disabled = false;
+    gujaratBtn.innerHTML = `
+      <i class="fas fa-map-marked-alt"></i>
+      <span class="btn-text">Gujarat: Weather, Soil & Environment → Crop Advice</span>
+      <span class="btn-subtext">District-wise analysis for all Gujarat regions</span>
+    `;
+    loading.style.display = 'none';
+  }
+}
+
+function generateGujaratAnalysis() {
+  const districts = Object.keys(GUJARAT_DISTRICTS);
+  const totalDistricts = districts.length;
+  
+  // Analyze crop distribution
+  const cropFrequency = {};
+  const soilTypes = {};
+  const irrigationMethods = {};
+  
+  districts.forEach(district => {
+    const data = GUJARAT_DISTRICTS[district];
+    
+    // Count crop recommendations
+    data.recommended_crops.forEach(crop => {
+      cropFrequency[crop] = (cropFrequency[crop] || 0) + 1;
+    });
+    
+    // Count soil types
+    soilTypes[data.soil.type] = (soilTypes[data.soil.type] || 0) + 1;
+    
+    // Count irrigation methods
+    irrigationMethods[data.environment.irrigation] = (irrigationMethods[data.environment.irrigation] || 0) + 1;
+  });
+  
+  // Get top recommendations
+  const topCrops = Object.entries(cropFrequency)
+    .sort(([,a], [,b]) => b - a)
+    .slice(0, 5);
+  
+  return {
+    totalDistricts,
+    topCrops,
+    soilTypes,
+    irrigationMethods,
+    districts: GUJARAT_DISTRICTS
+  };
+}
+
+function displayGujaratResults(analysis) {
+  const result = document.getElementById('result');
+  
+  const topCropsHtml = analysis.topCrops
+    .map(([crop, count]) => `
+      <div class="crop-stat">
+        <span class="crop-name">${crop.charAt(0).toUpperCase() + crop.slice(1)}</span>
+        <span class="crop-count">${count}/${analysis.totalDistricts} districts</span>
+      </div>
+    `).join('');
+  
+  const districtDetailsHtml = Object.entries(analysis.districts)
+    .slice(0, 6) // Show first 6 districts
+    .map(([district, data]) => `
+      <div class="district-card">
+        <h4>${district}</h4>
+        <div class="district-info">
+          <span><i class="fas fa-thermometer-half"></i> ${data.climate.temp}°C</span>
+          <span><i class="fas fa-tint"></i> ${data.climate.rainfall}mm</span>
+          <span><i class="fas fa-seedling"></i> ${data.soil.type}</span>
+        </div>
+        <div class="district-crops">
+          ${data.recommended_crops.slice(0, 3).map(crop => 
+            `<span class="crop-tag">${crop}</span>`
+          ).join('')}
+        </div>
+      </div>
+    `).join('');
+  
+  result.innerHTML = `
+    <div style="font-size: 2.5rem; margin-bottom: 20px;">🗺️</div>
+    <div><strong>Gujarat State-wide Crop Analysis Complete!</strong></div>
+    <div style="margin: 20px 0; font-size: 1rem; opacity: 0.9;">
+      Analyzed ${analysis.totalDistricts} districts with weather, soil & environmental data
+    </div>
+    
+    <div class="analysis-section">
+      <h3><i class="fas fa-chart-bar"></i> Top Recommended Crops Across Gujarat</h3>
+      <div class="crops-grid">
+        ${topCropsHtml}
+      </div>
+    </div>
+    
+    <div class="analysis-section">
+      <h3><i class="fas fa-map-marker-alt"></i> Sample District Analysis</h3>
+      <div class="districts-grid">
+        ${districtDetailsHtml}
+      </div>
+      <div style="margin-top: 15px; font-size: 0.9rem; opacity: 0.8;">
+        <i class="fas fa-info-circle"></i> Showing 6 of ${analysis.totalDistricts} districts. 
+        Each district analyzed for climate, soil type, and water availability.
+      </div>
+    </div>
+    
+    <div class="analysis-section">
+      <h3><i class="fas fa-lightbulb"></i> Key Insights</h3>
+      <ul style="text-align: left; margin: 15px 0;">
+        <li><strong>Cotton</strong> is suitable for ${analysis.topCrops[0][1]} districts (highest adaptability)</li>
+        <li><strong>Wheat</strong> recommended for ${analysis.topCrops.find(([crop]) => crop === 'wheat')?.[1] || 0} districts</li>
+        <li><strong>South Gujarat</strong> (Valsad, Navsari) ideal for rice and sugarcane</li>
+        <li><strong>Kutch region</strong> requires drought-resistant crops like castor and bajra</li>
+        <li><strong>Central Gujarat</strong> perfect for cotton and commercial crops</li>
+      </ul>
+    </div>
+  `;
+  
+  result.classList.add('show', 'success');
+  
+  // Scroll to result
+  setTimeout(() => {
+    result.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 300);
+}
+
+// Initialize Gujarat button tooltip functionality
+document.addEventListener('DOMContentLoaded', function() {
+  const gujaratBtn = document.getElementById('gujaratBtn');
+  const tooltip = document.getElementById('gujaratTooltip');
+  
+  if (gujaratBtn && tooltip) {
+    // Set tooltip title for accessibility
+    gujaratBtn.title = "Gujarat: analyze all districts – weather, soil & environment → crop recommendations";
+    
+    // Show tooltip on hover
+    gujaratBtn.addEventListener('mouseenter', function() {
+      tooltip.classList.add('show');
+    });
+    
+    // Hide tooltip when not hovering
+    gujaratBtn.addEventListener('mouseleave', function() {
+      tooltip.classList.remove('show');
+    });
+    
+    // Show tooltip on focus (keyboard navigation)
+    gujaratBtn.addEventListener('focus', function() {
+      tooltip.classList.add('show');
+    });
+    
+    // Hide tooltip on blur
+    gujaratBtn.addEventListener('blur', function() {
+      tooltip.classList.remove('show');
+    });
+  }
+});
