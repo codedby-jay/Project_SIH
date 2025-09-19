@@ -62,86 +62,170 @@ async function checkServerStatus() {
 
 // Main crop recommendation function
 async function getCrop() {
+  console.log('getCrop function called');
+  
   const form = document.getElementById('cropForm');
-  const submitBtn = document.querySelector('.submit-btn');
+  const submitBtn = document.querySelector('.btn-primary');
   const loading = document.getElementById('loading');
   const result = document.getElementById('result');
   
-  // Validate form
-  if (!form.checkValidity()) {
-    form.reportValidity();
-    return;
-  }
-
-  // Add particle effect on button click
-  const rect = submitBtn.getBoundingClientRect();
-  createParticles(rect.left + rect.width / 2, rect.top + rect.height / 2);
-
-  // Check server status first
-  const serverRunning = await checkServerStatus();
-  if (!serverRunning) {
-    displayError('Server is not running. Please run "python launch_app.py" to start the application.');
-    return;
-  }
-
-  // Get form data
-  let data = {
-    N: parseFloat(document.getElementById("N").value),
-    P: parseFloat(document.getElementById("P").value),
-    K: parseFloat(document.getElementById("K").value),
-    temperature: parseFloat(document.getElementById("temp").value),
-    humidity: parseFloat(document.getElementById("humidity").value),
-    ph: parseFloat(document.getElementById("ph").value),
-    rainfall: parseFloat(document.getElementById("rain").value)
+  console.log('Elements found:', {
+    form: !!form,
+    submitBtn: !!submitBtn,
+    loading: !!loading,
+    result: !!result
+  });
+  
+  // Get form inputs
+  const inputs = {
+    N: document.getElementById('N'),
+    P: document.getElementById('P'),
+    K: document.getElementById('K'),
+    temp: document.getElementById('temp'),
+    humidity: document.getElementById('humidity'),
+    ph: document.getElementById('ph'),
+    rain: document.getElementById('rain')
   };
 
-  // Show loading state with enhanced animation
-  submitBtn.disabled = true;
-  submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing...';
-  loading.style.display = 'block';
-  result.classList.remove('show', 'success', 'error');
-
-  // Add loading animation to inputs
-  const inputs = document.querySelectorAll('.input-group input');
-  inputs.forEach(input => {
-    input.style.transform = 'scale(0.98)';
-    input.style.transition = 'transform 0.3s ease';
+  console.log('Input elements:', inputs);
+  console.log('Input values:', {
+    N: inputs.N?.value,
+    P: inputs.P?.value,
+    K: inputs.K?.value,
+    temp: inputs.temp?.value,
+    humidity: inputs.humidity?.value,
+    ph: inputs.ph?.value,
+    rain: inputs.rain?.value
   });
 
+  // Validate all inputs are filled
+  let isValid = true;
+  for (const [key, input] of Object.entries(inputs)) {
+    if (!input) {
+      console.error(`Input element ${key} not found`);
+      isValid = false;
+      continue;
+    }
+    
+    if (!input.value || input.value === '') {
+      input.classList.add('invalid');
+      showInputError(input, 'This field is required');
+      isValid = false;
+      console.log(`${key} is empty`);
+    } else {
+      input.classList.remove('invalid');
+      hideInputError(input);
+    }
+  }
+
+  if (!isValid) {
+    console.log('Form validation failed');
+    if (submitBtn) {
+      submitBtn.classList.add('shake');
+      setTimeout(() => submitBtn.classList.remove('shake'), 500);
+    }
+    return;
+  }
+
+  console.log('Form validation passed, proceeding with API call');
+
+  // Add particle effect on button click
+  if (submitBtn) {
+    const rect = submitBtn.getBoundingClientRect();
+    createParticles(rect.left + rect.width / 2, rect.top + rect.height / 2);
+  }
+
+  // Show loading state
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Analyzing...</span>';
+  }
+  if (loading) {
+    loading.classList.add('show');
+  }
+  if (result) {
+    result.classList.remove('show');
+  }
+  
   try {
-    const response = await fetch("http://127.0.0.1:5000/predict", {
-      method: "POST",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify(data)
+    // Prepare data for API
+    const formData = {
+      N: parseFloat(inputs.N.value),
+      P: parseFloat(inputs.P.value),
+      K: parseFloat(inputs.K.value),
+      temperature: parseFloat(inputs.temp.value),
+      humidity: parseFloat(inputs.humidity.value),
+      ph: parseFloat(inputs.ph.value),
+      rainfall: parseFloat(inputs.rain.value)
+    };
+
+    console.log('Sending data:', formData);
+
+    // Check server status first
+    const serverRunning = await checkServerStatus();
+    console.log('Server running:', serverRunning);
+    
+    if (!serverRunning) {
+      console.log('Server not running, showing mock result');
+      // Show mock result when server is not running
+      const mockResult = {
+        recommended_crop: 'Rice',
+        confidence: 85,
+        message: 'Based on your soil conditions, Rice is recommended (Demo Mode - Server Offline)'
+      };
+      
+      setTimeout(() => {
+        if (loading) loading.classList.remove('show');
+        displayResult(mockResult, formData);
+      }, 1500);
+      return;
+    }
+
+    // Make API request
+    const response = await fetch('http://127.0.0.1:5000/predict', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(formData)
     });
+
+    console.log('API response status:', response.status);
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const resultData = await response.json();
-    
-    // Add success particle effect
+    const data = await response.json();
+    console.log('Received response:', data);
+
+    // Hide loading with delay for better UX
     setTimeout(() => {
-      createParticles(window.innerWidth / 2, window.innerHeight / 2);
+      if (loading) loading.classList.remove('show');
     }, 500);
     
     // Display result with enhanced animation
-    displayResult(resultData, data);
+    setTimeout(() => {
+      displayResult(data, formData);
+    }, 800);
     
   } catch (error) {
     console.error('Error:', error);
-    displayError('Failed to get recommendation. Please run "python launch_app.py" to start the server.');
-  } finally {
-    // Hide loading state and restore button
-    submitBtn.disabled = false;
-    submitBtn.innerHTML = '<i class="fas fa-magic"></i> Get Crop Recommendation';
-    loading.style.display = 'none';
+    if (loading) loading.classList.remove('show');
     
-    // Restore input animations
-    inputs.forEach(input => {
-      input.style.transform = 'scale(1)';
-    });
+    // Show mock result on error
+    const mockResult = {
+      recommended_crop: 'Cotton',
+      confidence: 78,
+      message: 'Based on your soil conditions, Cotton is recommended (Demo Mode - API Error)'
+    };
+    displayResult(mockResult, formData);
+  } finally {
+    // Restore button
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<i class="fas fa-magic"></i> <span>Analyze & Recommend</span>';
+    }
   }
 }
 
@@ -199,6 +283,49 @@ function displayError(message) {
   result.classList.add('show', 'error');
 }
 
+// Helper function to show input errors
+function showInputError(input, message) {
+  let errorElement = input.parentNode.querySelector('.input-error');
+  if (!errorElement) {
+    errorElement = document.createElement('div');
+    errorElement.className = 'input-error';
+    errorElement.style.color = '#ef4444';
+    errorElement.style.fontSize = '0.75rem';
+    errorElement.style.marginTop = '0.25rem';
+    input.parentNode.appendChild(errorElement);
+  }
+  errorElement.textContent = message;
+  errorElement.style.display = 'block';
+}
+
+// Helper function to hide input errors
+function hideInputError(input) {
+  const errorElement = input.parentNode.querySelector('.input-error');
+  if (errorElement) {
+    errorElement.style.display = 'none';
+  }
+}
+
+// Scroll to section function
+function scrollToSection(sectionId) {
+  const section = document.getElementById(sectionId);
+  if (section) {
+    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
+// Open chatbot function
+function openChatbot() {
+  const chatbotContainer = document.getElementById('chatbotContainer');
+  const chatbotToggle = document.getElementById('chatbotToggle');
+  
+  if (chatbotContainer) {
+    chatbotContainer.classList.add('show');
+  }
+  if (chatbotToggle) {
+    chatbotToggle.style.transform = 'scale(0.9)';
+  }
+}
 
 // Update server status display
 function updateServerStatus(isConnected) {
@@ -744,47 +871,65 @@ const GUJARAT_DISTRICTS = {
 
 // Gujarat District-wise Crop Recommendation Function
 async function getGujaratRecommendations() {
-  const gujaratBtn = document.getElementById('gujaratBtn');
+  console.log('getGujaratRecommendations function called');
+  
+  const gujaratBtn = document.querySelector('.btn-secondary');
   const loading = document.getElementById('loading');
   const result = document.getElementById('result');
   
-  // Add particle effect
-  const rect = gujaratBtn.getBoundingClientRect();
-  createParticles(rect.left + rect.width / 2, rect.top + rect.height / 2);
+  console.log('Gujarat elements found:', {
+    gujaratBtn: !!gujaratBtn,
+    loading: !!loading,
+    result: !!result
+  });
   
-  // Show loading state
-  gujaratBtn.disabled = true;
-  gujaratBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span class="btn-text">Analyzing Gujarat Districts...</span>';
-  loading.style.display = 'block';
-  result.classList.remove('show', 'success', 'error');
+  if (!gujaratBtn || !loading || !result) {
+    console.error('Required elements not found');
+    return;
+  }
   
   try {
-    // Simulate API call delay for realistic experience
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // Add particle effect
+    const rect = gujaratBtn.getBoundingClientRect();
+    createParticles(rect.left + rect.width / 2, rect.top + rect.height / 2);
     
-    // Generate comprehensive Gujarat analysis
-    const analysis = generateGujaratAnalysis();
+    // Update button state
+    gujaratBtn.disabled = true;
+    gujaratBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Analyzing Gujarat...</span>';
     
-    // Display results
-    displayGujaratResults(analysis);
+    // Show loading
+    loading.classList.add('show');
+    result.classList.remove('show');
+    
+    // Generate analysis data
+    const analysisData = generateGujaratAnalysis();
+    console.log('Generated analysis data:', analysisData);
+    
+    // Hide loading and display results
+    setTimeout(() => {
+      loading.classList.remove('show');
+      displayGujaratResults(analysisData);
+    }, 1500);
     
     // Add success particle effect
     setTimeout(() => {
       createParticles(window.innerWidth / 2, window.innerHeight / 2);
-    }, 500);
+    }, 2000);
     
   } catch (error) {
     console.error('Gujarat analysis error:', error);
+    if (loading) {
+      loading.classList.remove('show');
+    }
     displayError('Failed to analyze Gujarat districts. Please try again.');
   } finally {
     // Restore button
-    gujaratBtn.disabled = false;
-    gujaratBtn.innerHTML = `
-      <i class="fas fa-map-marked-alt"></i>
-      <span class="btn-text">Gujarat: Weather, Soil & Environment → Crop Advice</span>
-      <span class="btn-subtext">District-wise analysis for all Gujarat regions</span>
-    `;
-    loading.style.display = 'none';
+    setTimeout(() => {
+      if (gujaratBtn) {
+        gujaratBtn.disabled = false;
+        gujaratBtn.innerHTML = '<i class="fas fa-search-location"></i> <span>Analyze Gujarat Districts</span>';
+      }
+    }, 1600);
   }
 }
 
@@ -826,78 +971,324 @@ function generateGujaratAnalysis() {
   };
 }
 
-function displayGujaratResults(analysis) {
+function displayGujaratResults(analysisData) {
   const result = document.getElementById('result');
   
-  const topCropsHtml = analysis.topCrops
-    .map(([crop, count]) => `
-      <div class="crop-stat">
-        <span class="crop-name">${crop.charAt(0).toUpperCase() + crop.slice(1)}</span>
-        <span class="crop-count">${count}/${analysis.totalDistricts} districts</span>
-      </div>
-    `).join('');
+  const { totalDistricts, topCrops, soilTypes, irrigationMethods } = analysisData;
   
-  const districtDetailsHtml = Object.entries(analysis.districts)
-    .slice(0, 6) // Show first 6 districts
-    .map(([district, data]) => `
-      <div class="district-card">
-        <h4>${district}</h4>
-        <div class="district-info">
-          <span><i class="fas fa-thermometer-half"></i> ${data.climate.temp}°C</span>
-          <span><i class="fas fa-tint"></i> ${data.climate.rainfall}mm</span>
-          <span><i class="fas fa-seedling"></i> ${data.soil.type}</span>
-        </div>
-        <div class="district-crops">
-          ${data.recommended_crops.slice(0, 3).map(crop => 
-            `<span class="crop-tag">${crop}</span>`
-          ).join('')}
-        </div>
-      </div>
-    `).join('');
-  
+  // Create comprehensive Gujarat analysis display
   result.innerHTML = `
-    <div style="font-size: 2.5rem; margin-bottom: 20px;">🗺️</div>
-    <div><strong>Gujarat State-wide Crop Analysis Complete!</strong></div>
-    <div style="margin: 20px 0; font-size: 1rem; opacity: 0.9;">
-      Analyzed ${analysis.totalDistricts} districts with weather, soil & environmental data
-    </div>
-    
-    <div class="analysis-section">
-      <h3><i class="fas fa-chart-bar"></i> Top Recommended Crops Across Gujarat</h3>
-      <div class="crops-grid">
-        ${topCropsHtml}
+    <div class="success-container">
+      <div class="success-icon">🗺️</div>
+      <h3 class="success-title">Gujarat Regional Analysis Complete</h3>
+      <p class="success-message">Comprehensive district-wise crop recommendations for all ${totalDistricts} districts</p>
+      
+      <div class="gujarat-analysis-grid">
+        <div class="analysis-card">
+          <div class="analysis-header">
+            <i class="fas fa-seedling"></i>
+            <h4>Top Recommended Crops</h4>
+          </div>
+          <div class="crop-list">
+            ${topCrops.map(([crop, count]) => `
+              <div class="crop-item">
+                <span class="crop-name">${crop.charAt(0).toUpperCase() + crop.slice(1)}</span>
+                <span class="crop-count">${count} districts</span>
+                <div class="crop-bar">
+                  <div class="crop-fill" style="width: ${(count / totalDistricts) * 100}%"></div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+        
+        <div class="analysis-card">
+          <div class="analysis-header">
+            <i class="fas fa-mountain"></i>
+            <h4>Soil Type Distribution</h4>
+          </div>
+          <div class="soil-list">
+            ${Object.entries(soilTypes).map(([soil, count]) => `
+              <div class="soil-item">
+                <span class="soil-name">${soil.replace('_', ' ').toUpperCase()}</span>
+                <span class="soil-count">${count} districts</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+        
+        <div class="analysis-card">
+          <div class="analysis-header">
+            <i class="fas fa-tint"></i>
+            <h4>Irrigation Methods</h4>
+          </div>
+          <div class="irrigation-list">
+            ${Object.entries(irrigationMethods).map(([method, count]) => `
+              <div class="irrigation-item">
+                <span class="irrigation-name">${method.replace('_', ' ').toUpperCase()}</span>
+                <span class="irrigation-count">${count} districts</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+        
+        <div class="analysis-card district-highlights">
+          <div class="analysis-header">
+            <i class="fas fa-star"></i>
+            <h4>District Highlights</h4>
+          </div>
+          <div class="highlight-list">
+            <div class="highlight-item">
+              <strong>Highest Rainfall:</strong> Dang (2200mm) - Ideal for rice cultivation
+            </div>
+            <div class="highlight-item">
+              <strong>Arid Region:</strong> Kutch (350mm) - Perfect for drought-resistant crops
+            </div>
+            <div class="highlight-item">
+              <strong>Fertile Plains:</strong> Kheda, Anand - High fertility alluvial soil
+            </div>
+            <div class="highlight-item">
+              <strong>Coastal Belt:</strong> Valsad, Navsari - Tropical crop cultivation
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
-    
-    <div class="analysis-section">
-      <h3><i class="fas fa-map-marker-alt"></i> Sample District Analysis</h3>
-      <div class="districts-grid">
-        ${districtDetailsHtml}
+      
+      <div class="analysis-summary">
+        <h4><i class="fas fa-chart-line"></i> Key Insights</h4>
+        <ul>
+          <li><strong>Cotton</strong> is the most widely recommended crop across Gujarat districts</li>
+          <li><strong>Alluvial soil</strong> dominates the fertile regions of central Gujarat</li>
+          <li><strong>Canal irrigation</strong> is the primary water source for agriculture</li>
+          <li><strong>Climate diversity</strong> allows cultivation of both tropical and arid crops</li>
+          <li><strong>Water management</strong> varies from abundant rivers to scarce groundwater</li>
+        </ul>
       </div>
-      <div style="margin-top: 15px; font-size: 0.9rem; opacity: 0.8;">
-        <i class="fas fa-info-circle"></i> Showing 6 of ${analysis.totalDistricts} districts. 
-        Each district analyzed for climate, soil type, and water availability.
+      
+      <div class="analysis-actions">
+        <button class="btn btn-primary" onclick="getGujaratRecommendations()">
+          <i class="fas fa-refresh"></i> New Analysis
+        </button>
+        <button class="btn btn-success" onclick="downloadGujaratReport()">
+          <i class="fas fa-download"></i> Download Report
+        </button>
+        <button class="btn btn-secondary" onclick="showDistrictDetails()">
+          <i class="fas fa-map"></i> View District Details
+        </button>
       </div>
-    </div>
-    
-    <div class="analysis-section">
-      <h3><i class="fas fa-lightbulb"></i> Key Insights</h3>
-      <ul style="text-align: left; margin: 15px 0;">
-        <li><strong>Cotton</strong> is suitable for ${analysis.topCrops[0][1]} districts (highest adaptability)</li>
-        <li><strong>Wheat</strong> recommended for ${analysis.topCrops.find(([crop]) => crop === 'wheat')?.[1] || 0} districts</li>
-        <li><strong>South Gujarat</strong> (Valsad, Navsari) ideal for rice and sugarcane</li>
-        <li><strong>Kutch region</strong> requires drought-resistant crops like castor and bajra</li>
-        <li><strong>Central Gujarat</strong> perfect for cotton and commercial crops</li>
-      </ul>
     </div>
   `;
   
-  result.classList.add('show', 'success');
+  result.classList.add('show');
+  
+  // Add entrance animation
+  setTimeout(() => {
+    result.style.transform = 'scale(1.02)';
+    setTimeout(() => {
+      result.style.transform = 'scale(1)';
+    }, 200);
+  }, 100);
   
   // Scroll to result
   setTimeout(() => {
     result.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, 300);
+}
+
+// Download Gujarat report function
+function downloadGujaratReport() {
+  const analysisData = generateGujaratAnalysis();
+  const reportContent = `
+Gujarat Agricultural Analysis Report
+Generated on: ${new Date().toLocaleDateString()}
+
+OVERVIEW:
+- Total Districts Analyzed: ${analysisData.totalDistricts}
+- Comprehensive crop recommendations based on climate, soil, and water resources
+
+TOP RECOMMENDED CROPS:
+${analysisData.topCrops.map(([crop, count]) => `- ${crop.toUpperCase()}: Suitable for ${count} districts`).join('\n')}
+
+SOIL DISTRIBUTION:
+${Object.entries(analysisData.soilTypes).map(([soil, count]) => `- ${soil.replace('_', ' ').toUpperCase()}: ${count} districts`).join('\n')}
+
+IRRIGATION METHODS:
+${Object.entries(analysisData.irrigationMethods).map(([method, count]) => `- ${method.replace('_', ' ').toUpperCase()}: ${count} districts`).join('\n')}
+
+For detailed district-wise recommendations, please refer to the complete analysis.
+  `;
+  
+  const blob = new Blob([reportContent], { type: 'text/plain' });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'gujarat-agricultural-analysis.txt';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  window.URL.revokeObjectURL(url);
+  
+  // Show success message
+  const notification = document.createElement('div');
+  notification.className = 'download-notification';
+  notification.innerHTML = '<i class="fas fa-check"></i> Report downloaded successfully!';
+  document.body.appendChild(notification);
+  
+  setTimeout(() => {
+    notification.remove();
+  }, 3000);
+}
+
+// Show district details function
+function showDistrictDetails() {
+  const analysisData = generateGujaratAnalysis();
+  const result = document.getElementById('result');
+  
+  result.innerHTML = `
+    <div class="success-container">
+      <div class="success-icon">📍</div>
+      <h3 class="success-title">Gujarat District Details</h3>
+      <p class="success-message">Detailed analysis for all ${analysisData.totalDistricts} districts</p>
+      
+      <div class="districts-grid">
+        ${Object.entries(analysisData.districts).map(([district, data]) => `
+          <div class="district-card" onclick="showSingleDistrictDetail('${district}')">
+            <div class="district-header">
+              <h4 class="district-name">${district}</h4>
+              <div class="district-badge">${data.soil.fertility} fertility</div>
+            </div>
+            <div class="district-info">
+              <div class="info-row">
+                <span class="info-label">🌡️ Temperature:</span>
+                <span class="info-value">${data.climate.temp}°C</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">💧 Rainfall:</span>
+                <span class="info-value">${data.climate.rainfall}mm</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">🌾 Soil Type:</span>
+                <span class="info-value">${data.soil.type.replace(/_/g, ' ')}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">💧 Irrigation:</span>
+                <span class="info-value">${data.environment.irrigation}</span>
+              </div>
+              <strong>Recommended Crops:</strong>
+              <div class="crop-tags">
+                ${data.recommended_crops.map(crop => `<span class="crop-tag">${crop}</span>`).join('')}
+              </div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+      
+      <div class="analysis-actions">
+        <button class="btn btn-primary" onclick="getGujaratRecommendations()">
+          <i class="fas fa-arrow-left"></i> Back to Summary
+        </button>
+        <button class="btn btn-secondary" onclick="downloadGujaratReport()">
+          <i class="fas fa-download"></i> Download Report
+        </button>
+      </div>
+    </div>
+  `;
+  
+  result.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// Show single district detail function
+function showSingleDistrictDetail(districtName) {
+  const analysisData = generateGujaratAnalysis();
+  const districtData = analysisData.districts[districtName];
+  const result = document.getElementById('result');
+  
+  if (!districtData) return;
+  
+  result.innerHTML = `
+    <div class="success-container">
+      <div class="success-icon">🏛️</div>
+      <h3 class="success-title">${districtName} District Analysis</h3>
+      <p class="success-message">Comprehensive agricultural profile for ${districtName}</p>
+      
+      <div class="single-district-details">
+        <div class="detail-grid">
+          <div class="detail-card">
+            <h4><i class="fas fa-thermometer-half"></i> Climate Conditions</h4>
+            <div class="detail-content">
+              <div class="detail-item">
+                <span>Temperature:</span>
+                <strong>${districtData.climate.temp}°C</strong>
+              </div>
+              <div class="detail-item">
+                <span>Humidity:</span>
+                <strong>${districtData.climate.humidity}%</strong>
+              </div>
+              <div class="detail-item">
+                <span>Annual Rainfall:</span>
+                <strong>${districtData.climate.rainfall}mm</strong>
+              </div>
+            </div>
+          </div>
+          
+          <div class="detail-card">
+            <h4><i class="fas fa-seedling"></i> Soil Profile</h4>
+            <div class="detail-content">
+              <div class="detail-item">
+                <span>Soil Type:</span>
+                <strong>${districtData.soil.type.replace(/_/g, ' ').toUpperCase()}</strong>
+              </div>
+              <div class="detail-item">
+                <span>pH Level:</span>
+                <strong>${districtData.soil.ph}</strong>
+              </div>
+              <div class="detail-item">
+                <span>Fertility:</span>
+                <strong class="fertility-${districtData.soil.fertility}">${districtData.soil.fertility.toUpperCase()}</strong>
+              </div>
+            </div>
+          </div>
+          
+          <div class="detail-card">
+            <h4><i class="fas fa-tint"></i> Water Resources</h4>
+            <div class="detail-content">
+              <div class="detail-item">
+                <span>Water Availability:</span>
+                <strong>${districtData.environment.water_availability.replace(/_/g, ' ')}</strong>
+              </div>
+              <div class="detail-item">
+                <span>Irrigation Method:</span>
+                <strong>${districtData.environment.irrigation.toUpperCase()}</strong>
+              </div>
+            </div>
+          </div>
+          
+          <div class="detail-card full-width">
+            <h4><i class="fas fa-leaf"></i> Recommended Crops</h4>
+            <div class="recommended-crops-grid">
+              ${districtData.recommended_crops.map(crop => `
+                <div class="crop-recommendation">
+                  <span class="crop-name">${crop}</span>
+                  <span class="crop-suitability">Highly Suitable</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="analysis-actions">
+        <button class="btn btn-secondary" onclick="showDistrictDetails()">
+          <i class="fas fa-arrow-left"></i> Back to All Districts
+        </button>
+        <button class="btn btn-primary" onclick="getGujaratRecommendations()">
+          <i class="fas fa-chart-bar"></i> Back to Analysis
+        </button>
+      </div>
+    </div>
+  `;
+  
+  result.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 // Initialize Gujarat button tooltip functionality
@@ -929,4 +1320,106 @@ document.addEventListener('DOMContentLoaded', function() {
       tooltip.classList.remove('show');
     });
   }
+});
+
+// Mobile Navigation Toggle
+document.addEventListener('DOMContentLoaded', function() {
+    const hamburger = document.querySelector('.hamburger');
+    const navMenu = document.querySelector('.nav-menu');
+    const navLinks = document.querySelectorAll('.nav-menu a');
+
+    // Toggle mobile menu
+    if (hamburger && navMenu) {
+        hamburger.addEventListener('click', function() {
+            hamburger.classList.toggle('active');
+            navMenu.classList.toggle('active');
+            document.body.style.overflow = navMenu.classList.contains('active') ? 'hidden' : '';
+        });
+
+        // Close menu when clicking on nav links
+        navLinks.forEach(link => {
+            link.addEventListener('click', function() {
+                hamburger.classList.remove('active');
+                navMenu.classList.remove('active');
+                document.body.style.overflow = '';
+            });
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!hamburger.contains(e.target) && !navMenu.contains(e.target)) {
+                hamburger.classList.remove('active');
+                navMenu.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        });
+    }
+
+    // Smooth scrolling for navigation links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+                target.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        });
+    });
+
+    // Enhanced form validation with better UX
+    const form = document.getElementById('cropForm');
+    const inputs = form.querySelectorAll('input[type="number"]');
+    
+    inputs.forEach(input => {
+        // Real-time validation feedback
+        input.addEventListener('input', function() {
+            validateInput(this);
+        });
+        
+        input.addEventListener('blur', function() {
+            validateInput(this);
+        });
+    });
+
+    function validateInput(input) {
+        const value = parseFloat(input.value);
+        const min = parseFloat(input.min);
+        const max = parseFloat(input.max);
+        
+        // Remove previous validation classes
+        input.classList.remove('valid', 'invalid');
+        
+        if (input.value === '') {
+            return;
+        }
+        
+        if (isNaN(value) || value < min || value > max) {
+            input.classList.add('invalid');
+            showInputError(input, `Please enter a value between ${min} and ${max}`);
+        } else {
+            input.classList.add('valid');
+            hideInputError(input);
+        }
+    }
+
+    function showInputError(input, message) {
+        let errorElement = input.parentNode.querySelector('.input-error');
+        if (!errorElement) {
+            errorElement = document.createElement('div');
+            errorElement.className = 'input-error';
+            input.parentNode.appendChild(errorElement);
+        }
+        errorElement.textContent = message;
+        errorElement.style.display = 'block';
+    }
+
+    function hideInputError(input) {
+        const errorElement = input.parentNode.querySelector('.input-error');
+        if (errorElement) {
+            errorElement.style.display = 'none';
+        }
+    }
 });

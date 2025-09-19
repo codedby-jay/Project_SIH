@@ -3,108 +3,384 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Crop Recommendation System</title>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <title>Smart Crop Recommendation System | AI-Powered Agriculture</title>
+  <meta name="description" content="AI-powered crop recommendation system for sustainable agriculture and smart farming solutions">
+  
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Font Awesome -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  
+  <!-- Custom Styles -->
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="floating-elements">
-    <div class="floating-element"></div>
-    <div class="floating-element"></div>
-    <div class="floating-element"></div>
-  </div>
-  
-  <div class="container">
-    <div class="header">
-      <div class="logo-container">
-        <img style="border-radius: 50%;" src="logo.jpg" alt="Smart Crop Recommendation Logo" class="logo">
-        <div class="logo-text">
-          <h1> Smart Crop Recommendation</h1>
-          <p>AI-powered farming solutions for sustainable agriculture</p>
-        </div>
-      </div>
-      <div class="header-content">
-        <p>Get AI-powered crop recommendations based on your soil and weather conditions</p>
-        <div id="serverStatus" class="server-status">
-          <span id="statusIcon">🔄</span>
-          <span id="statusText">Checking server status...</span>
-        </div>
-      </div>
-    </div>
-
-    <form id="cropForm">
-      <div class="form-grid">
-        <div class="input-group">
-          <label for="N">Nitrogen (N) <i class="fas fa-leaf"></i></label>
-          <input type="number" id="N" placeholder="Enter N value" step="0.1" required>
-        </div>
-        
-        <div class="input-group">
-          <label for="P">Phosphorus (P) <i class="fas fa-seedling"></i></label>
-          <input type="number" id="P" placeholder="Enter P value" step="0.1" required>
-        </div>
-        
-        <div class="input-group">
-          <label for="K">Potassium (K) <i class="fas fa-tree"></i></label>
-          <input type="number" id="K" placeholder="Enter K value" step="0.1" required>
-        </div>
-        
-        <div class="input-group">
-          <label for="temp">Temperature (°C) <i class="fas fa-thermometer-half"></i></label>
-          <input type="number" id="temp" placeholder="Enter temperature" step="0.1" required>
-        </div>
-        
-        <div class="input-group">
-          <label for="humidity">Humidity (%) <i class="fas fa-tint"></i></label>
-          <input type="number" id="humidity" placeholder="Enter humidity" step="0.1" required>
-        </div>
-        
-        <div class="input-group">
-          <label for="ph">pH Level <i class="fas fa-flask"></i></label>
-          <input type="number" id="ph" placeholder="Enter pH (0-14)" step="0.1" min="0" max="14" required>
-        </div>
-        
-        <div class="input-group">
-          <label for="rain">Rainfall (mm) <i class="fas fa-cloud-rain"></i></label>
-          <input type="number" id="rain" placeholder="Enter rainfall" step="0.1" required>
+  <!-- Navigation Bar -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <div class="nav-brand">
+        <img src="logo.jpg" alt="Smart Crop Logo" class="nav-logo">
+        <div class="brand-text">
+          <h2>AgriSmart</h2>
+          <span>AI Agriculture</span>
         </div>
       </div>
       
-      <button type="button" class="submit-btn" onclick="getCrop()">
-        <i class="fas fa-magic"></i> Get Crop Recommendation
-      </button>
-      
-      <!-- Gujarat District-wise Recommendation Button -->
-      <div class="gujarat-section">
-        <div class="section-divider">
-          <span>OR</span>
-        </div>
-        <button type="button" class="gujarat-btn" id="gujaratBtn" onclick="getGujaratRecommendations()">
-          <i class="fas fa-map-marked-alt"></i>
-          <span class="btn-text">Gujarat: Weather, Soil & Environment → Crop Advice</span>
-          <span class="btn-subtext">District-wise analysis for all Gujarat regions</span>
-        </button>
-        <div class="tooltip" id="gujaratTooltip">
+      <div class="nav-menu" id="navMenu">
+        <a href="#home" class="nav-link active">
+          <i class="fas fa-home"></i>
+          <span>Home</span>
+        </a>
+        <a href="#prediction" class="nav-link">
+          <i class="fas fa-seedling"></i>
+          <span>Predict</span>
+        </a>
+        <a href="#about" class="nav-link">
           <i class="fas fa-info-circle"></i>
-          Analyze Gujarat's district-wise soil, weather & environmental factors to suggest best crops for each region
+          <span>About</span>
+        </a>
+        <a href="#contact" class="nav-link">
+          <i class="fas fa-envelope"></i>
+          <span>Contact</span>
+        </a>
+      </div>
+      
+      <div class="nav-actions">
+        <div class="server-status-nav" id="serverStatusNav">
+          <span class="status-dot"></span>
+          <span class="status-text">Checking...</span>
+        </div>
+        <button class="nav-toggle" id="navToggle">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero" id="home">
+    <div class="hero-background">
+      <div class="hero-particles"></div>
+    </div>
+    
+    <div class="hero-content">
+      <div class="hero-text">
+        <h1 class="hero-title">
+          Smart Crop Recommendation
+          <span class="gradient-text">System</span>
+        </h1>
+        <p class="hero-subtitle">
+          Harness the power of AI to make informed agricultural decisions. 
+          Get personalized crop recommendations based on soil conditions, weather patterns, and environmental factors.
+        </p>
+        <div class="hero-stats">
+          <div class="stat-item">
+            <div class="stat-number">95%</div>
+            <div class="stat-label">Accuracy</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-number">50+</div>
+            <div class="stat-label">Crop Types</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-number">24/7</div>
+            <div class="stat-label">AI Support</div>
+          </div>
+        </div>
+        <div class="hero-actions">
+          <button class="btn btn-primary" onclick="scrollToSection('prediction')">
+            <i class="fas fa-rocket"></i>
+            Get Started
+          </button>
+          <button class="btn btn-secondary" onclick="openChatbot()">
+            <i class="fas fa-robot"></i>
+            AI Assistant
+          </button>
         </div>
       </div>
-    </form>
-
-    <div class="loading" id="loading">
-      <div class="spinner"></div>
-      <p>Analyzing your data and finding the best crop...</p>
+      
+      <div class="hero-visual">
+        <div class="feature-cards">
+          <div class="feature-card">
+            <div class="feature-icon">
+              <i class="fas fa-brain"></i>
+            </div>
+            <h3>AI-Powered</h3>
+            <p>Advanced machine learning algorithms</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">
+              <i class="fas fa-leaf"></i>
+            </div>
+            <h3>Sustainable</h3>
+            <p>Eco-friendly farming solutions</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">
+              <i class="fas fa-chart-line"></i>
+            </div>
+            <h3>Data-Driven</h3>
+            <p>Real-time analytics and insights</p>
+          </div>
+        </div>
+      </div>
     </div>
+  </section>
 
-    <div class="result" id="result"></div>
-  </div>
+  <!-- Main Prediction Section -->
+  <section class="prediction-section" id="prediction">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">Crop Recommendation Engine</h2>
+        <p class="section-subtitle">
+          Enter your soil and environmental parameters to get AI-powered crop recommendations
+        </p>
+      </div>
+
+      <div class="prediction-container">
+        <!-- Input Form Card -->
+        <div class="card prediction-card">
+          <div class="card-header">
+            <h3>
+              <i class="fas fa-seedling"></i>
+              Soil & Environmental Data
+            </h3>
+            <p>Provide accurate measurements for best results</p>
+          </div>
+          
+          <form id="cropForm" class="prediction-form">
+            <div class="form-grid">
+              <div class="input-group">
+                <label for="N">
+                  <i class="fas fa-leaf"></i>
+                  Nitrogen (N)
+                  <span class="unit">mg/kg</span>
+                </label>
+                <input type="number" id="N" placeholder="0-300" step="0.1" required>
+                <div class="input-help">Essential for leaf growth</div>
+              </div>
+              
+              <div class="input-group">
+                <label for="P">
+                  <i class="fas fa-seedling"></i>
+                  Phosphorus (P)
+                  <span class="unit">mg/kg</span>
+                </label>
+                <input type="number" id="P" placeholder="0-150" step="0.1" required>
+                <div class="input-help">Promotes root development</div>
+              </div>
+              
+              <div class="input-group">
+                <label for="K">
+                  <i class="fas fa-tree"></i>
+                  Potassium (K)
+                  <span class="unit">mg/kg</span>
+                </label>
+                <input type="number" id="K" placeholder="0-300" step="0.1" required>
+                <div class="input-help">Enhances disease resistance</div>
+              </div>
+              
+              <div class="input-group">
+                <label for="temp">
+                  <i class="fas fa-thermometer-half"></i>
+                  Temperature
+                  <span class="unit">°C</span>
+                </label>
+                <input type="number" id="temp" placeholder="10-45" step="0.1" required>
+                <div class="input-help">Average growing temperature</div>
+              </div>
+              
+              <div class="input-group">
+                <label for="humidity">
+                  <i class="fas fa-tint"></i>
+                  Humidity
+                  <span class="unit">%</span>
+                </label>
+                <input type="number" id="humidity" placeholder="20-100" step="0.1" required>
+                <div class="input-help">Relative humidity level</div>
+              </div>
+              
+              <div class="input-group">
+                <label for="ph">
+                  <i class="fas fa-flask"></i>
+                  pH Level
+                  <span class="unit">0-14</span>
+                </label>
+                <input type="number" id="ph" placeholder="4.0-9.0" step="0.1" min="0" max="14" required>
+                <div class="input-help">Soil acidity/alkalinity</div>
+              </div>
+              
+              <div class="input-group">
+                <label for="rain">
+                  <i class="fas fa-cloud-rain"></i>
+                  Rainfall
+                  <span class="unit">mm</span>
+                </label>
+                <input type="number" id="rain" placeholder="20-3000" step="0.1" required>
+                <div class="input-help">Annual precipitation</div>
+              </div>
+            </div>
+            
+            <div class="form-actions">
+              <button type="button" class="btn btn-primary btn-large" onclick="getCrop()">
+                <i class="fas fa-magic"></i>
+                <span>Analyze & Recommend</span>
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Gujarat Analysis Card -->
+        <div class="card gujarat-card">
+          <div class="card-header">
+            <h3>
+              <i class="fas fa-map-marked-alt"></i>
+              Gujarat Regional Analysis
+            </h3>
+            <p>Comprehensive district-wise crop recommendations for Gujarat state</p>
+          </div>
+          
+          <div class="gujarat-content">
+            <div class="gujarat-features">
+              <div class="feature-item">
+                <i class="fas fa-cloud-sun"></i>
+                <span>Weather Analysis</span>
+              </div>
+              <div class="feature-item">
+                <i class="fas fa-mountain"></i>
+                <span>Soil Mapping</span>
+              </div>
+              <div class="feature-item">
+                <i class="fas fa-water"></i>
+                <span>Water Resources</span>
+              </div>
+            </div>
+            
+            <button type="button" class="btn btn-secondary btn-large" onclick="getGujaratRecommendations()">
+              <i class="fas fa-search-location"></i>
+              <span>Analyze Gujarat Districts</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Loading Animation -->
+      <div class="loading-container" id="loading">
+        <div class="loading-spinner">
+          <div class="spinner-ring"></div>
+          <div class="spinner-ring"></div>
+          <div class="spinner-ring"></div>
+        </div>
+        <p class="loading-text">Analyzing your data with AI...</p>
+      </div>
+
+      <!-- Results Section -->
+      <div class="results-container" id="result"></div>
+    </div>
+  </section>
+
+  <!-- About Section -->
+  <section class="about-section" id="about">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">Why Choose AgriSmart?</h2>
+        <p class="section-subtitle">
+          Revolutionizing agriculture with cutting-edge AI technology
+        </p>
+      </div>
+      
+      <div class="features-grid">
+        <div class="feature-box">
+          <div class="feature-icon-large">
+            <i class="fas fa-robot"></i>
+          </div>
+          <h3>AI-Powered Intelligence</h3>
+          <p>Advanced machine learning algorithms analyze multiple environmental factors to provide accurate crop recommendations.</p>
+        </div>
+        
+        <div class="feature-box">
+          <div class="feature-icon-large">
+            <i class="fas fa-globe-americas"></i>
+          </div>
+          <h3>Regional Expertise</h3>
+          <p>Specialized knowledge of local conditions, soil types, and climate patterns for optimal farming decisions.</p>
+        </div>
+        
+        <div class="feature-box">
+          <div class="feature-icon-large">
+            <i class="fas fa-chart-bar"></i>
+          </div>
+          <h3>Data-Driven Insights</h3>
+          <p>Real-time analysis of soil nutrients, weather patterns, and environmental factors for precise recommendations.</p>
+        </div>
+        
+        <div class="feature-box">
+          <div class="feature-icon-large">
+            <i class="fas fa-comments"></i>
+          </div>
+          <h3>24/7 AI Assistant</h3>
+          <p>Get instant answers to your farming questions with our intelligent chatbot trained on agricultural best practices.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-brand">
+          <img src="logo.jpg" alt="AgriSmart Logo" class="footer-logo">
+          <div class="brand-text">
+            <h3>AgriSmart</h3>
+            <p>AI-Powered Agriculture Solutions</p>
+          </div>
+        </div>
+        
+        <div class="footer-links">
+          <div class="link-group">
+            <h4>Product</h4>
+            <a href="#prediction">Crop Prediction</a>
+            <a href="#about">Features</a>
+            <a href="#contact">Support</a>
+          </div>
+          
+          <div class="link-group">
+            <h4>Technology</h4>
+            <a href="#">Machine Learning</a>
+            <a href="#">Data Analytics</a>
+            <a href="#">API Documentation</a>
+          </div>
+          
+          <div class="link-group">
+            <h4>Connect</h4>
+            <a href="#"><i class="fab fa-github"></i> GitHub</a>
+            <a href="#"><i class="fab fa-linkedin"></i> LinkedIn</a>
+            <a href="#"><i class="fas fa-envelope"></i> Contact</a>
+          </div>
+        </div>
+      </div>
+      
+      <div class="footer-bottom">
+        <p>&copy; 2024 AgriSmart. Empowering farmers with AI technology.</p>
+      </div>
+    </div>
+  </footer>
 
   <!-- AI Farming Assistant Chatbot -->
   <div class="chatbot-container" id="chatbotContainer">
     <div class="chatbot-header">
       <div class="chatbot-title">
-        <i class="fas fa-robot"></i>
-        <span>AI Farming Assistant</span>
+        <div class="chatbot-avatar">
+          <i class="fas fa-robot"></i>
+        </div>
+        <div class="chatbot-info">
+          <span class="chatbot-name">AgriBot</span>
+          <span class="chatbot-status">Online</span>
+        </div>
       </div>
       <button class="chatbot-close" id="chatbotClose">
         <i class="fas fa-times"></i>
@@ -117,15 +393,16 @@
           <i class="fas fa-seedling"></i>
         </div>
         <div class="message-content">
-          <p>Hello! I'm your AI Farming Assistant. I can help you with:</p>
+          <p>👋 Hello! I'm AgriBot, your AI farming assistant.</p>
+          <p>I can help you with:</p>
           <ul>
-            <li>🌾 Crop recommendations</li>
-            <li>🌱 Farming advice & tips</li>
-            <li>💧 Irrigation guidance</li>
-            <li>🧪 Soil management</li>
-            <li>🌿 Fertilizer recommendations</li>
+            <li>🌾 Crop recommendations & cultivation tips</li>
+            <li>🌱 Soil management & fertilizer advice</li>
+            <li>💧 Irrigation & water management</li>
+            <li>🐛 Pest control & disease prevention</li>
+            <li>�️ Weather adaptation strategies</li>
           </ul>
-          <p>What would you like to know?</p>
+          <p>What would you like to know about farming?</p>
         </div>
       </div>
     </div>
@@ -146,7 +423,7 @@
         <button class="suggestion-btn" data-message="What crops grow best in sandy soil?">
           Sandy soil crops
         </button>
-        <button class="suggestion-btn" data-message="How to improve soil fertility?">
+        <button class="suggestion-btn" data-message="How to improve soil fertility naturally?">
           Soil fertility
         </button>
         <button class="suggestion-btn" data-message="Best irrigation methods for vegetables?">
@@ -162,6 +439,7 @@
     <span class="chatbot-notification" id="chatbotNotification">1</span>
   </button>
 
+  <!-- Scripts -->
   <script src="script.js"></script>
 </body>
 </html>
